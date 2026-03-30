@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Access Gate</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #050709;
+        --surface: #090d12;
+        --panel: rgba(10, 15, 22, 0.92);
+        --panel-border: rgba(255, 255, 255, 0.055);
+        --text: #dde8f5;
+        --muted: #4e6070;
+        --muted-2: #2e3d4d;
+        --accent: #3d8ef0;
+        --accent-glow: rgba(61, 142, 240, 0.18);
+        --accent-dim: rgba(61, 142, 240, 0.08);
+        --danger: #e05252;
+        --danger-glow: rgba(224, 82, 82, 0.15);
+        --good: #3dcf82;
+        --good-glow: rgba(61, 207, 130, 0.15);
+        --warn: #f0a83d;
+        --radius: 20px;
+        --mono: "JetBrains Mono", monospace;
+        --display: "Syne", sans-serif;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--display);
+        overflow: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 9999;
+        opacity: 0.5;
+      }
+
+      .blob {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(80px);
+        pointer-events: none;
+        z-index: 0;
+        transition: background 1.2s ease;
+      }
+      .blob-1 {
+        width: 500px;
+        height: 500px;
+        background: radial-gradient(
+          circle,
+          rgba(30, 80, 160, 0.18),
+          transparent 70%
+        );
+        top: -120px;
+        left: -100px;
+      }
+      .blob-2 {
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(
+          circle,
+          rgba(10, 40, 90, 0.12),
+          transparent 70%
+        );
+        bottom: -100px;
+        right: -80px;
+      }
+
+      body {
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      .shell {
+        position: relative;
+        z-index: 1;
+        width: min(100%, 420px);
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: var(--radius);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        box-shadow:
+          0 0 0 1px rgba(255, 255, 255, 0.03),
+          0 30px 80px rgba(0, 0, 0, 0.7),
+          0 0 60px rgba(61, 142, 240, 0.04);
+        overflow: hidden;
+        animation: shellIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+
+      @keyframes shellIn {
+        from {
+          opacity: 0;
+          transform: translateY(16px) scale(0.98);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .shell::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(61, 142, 240, 0.5),
+          transparent
+        );
+      }
+
+      .close-btn {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: 32px;
+        height: 32px;
+        border: 1px solid var(--panel-border);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--muted);
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        transition:
+          background 0.18s,
+          border-color 0.18s,
+          color 0.18s;
+        z-index: 10;
+      }
+      .close-btn:hover {
+        background: rgba(224, 82, 82, 0.12);
+        border-color: rgba(224, 82, 82, 0.3);
+        color: var(--danger);
+      }
+      .close-btn svg {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+      }
+
+      .header {
+        padding: 28px 28px 0;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-family: var(--mono);
+        font-size: 0.68rem;
+        font-weight: 400;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--accent);
+        background: var(--accent-dim);
+        border: 1px solid rgba(61, 142, 240, 0.18);
+        border-radius: 999px;
+        padding: 4px 12px;
+        margin-bottom: 18px;
+      }
+      .badge-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 6px var(--accent);
+        animation: pulse 2s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.35;
+        }
+      }
+      .title {
+        font-size: 1.9rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+        color: var(--text);
+      }
+      .subtitle {
+        margin-top: 8px;
+        font-family: var(--mono);
+        font-size: 0.8rem;
+        font-weight: 300;
+        color: var(--muted);
+        letter-spacing: 0.01em;
+        line-height: 1.6;
+      }
+      .divider {
+        margin: 24px 28px 0;
+        height: 1px;
+        background: var(--panel-border);
+      }
+
+      .body {
+        padding: 22px 28px 28px;
+      }
+      .label {
+        font-family: var(--mono);
+        font-size: 0.7rem;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 10px;
+      }
+      .field {
+        display: flex;
+        gap: 8px;
+      }
+      input {
+        flex: 1;
+        height: 50px;
+        background: rgba(5, 8, 14, 0.7);
+        border: 1px solid var(--muted-2);
+        border-radius: 13px;
+        color: var(--text);
+        font-family: var(--mono);
+        font-size: 1rem;
+        letter-spacing: 0.15em;
+        padding: 0 16px;
+        outline: none;
+      }
+      input:focus {
+        border-color: rgba(61, 142, 240, 0.5);
+        background: rgba(5, 8, 14, 0.9);
+      }
+      .unlock-btn {
+        height: 50px;
+        padding: 0 20px;
+        border: none;
+        border-radius: 13px;
+        background: var(--accent);
+        color: #fff;
+        font-family: var(--display);
+        font-size: 0.88rem;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 8px 24px rgba(61, 142, 240, 0.28);
+      }
+
+      .status {
+        margin-top: 12px;
+        min-height: 20px;
+        font-family: var(--mono);
+        font-size: 0.76rem;
+        color: transparent;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .status::before {
+        content: "";
+        display: none;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .status.error {
+        color: var(--danger);
+      }
+      .status.error::before {
+        display: block;
+        background: var(--danger);
+        box-shadow: 0 0 5px var(--danger);
+      }
+      .status.good {
+        color: var(--good);
+      }
+      .status.good::before {
+        display: block;
+        background: var(--good);
+        box-shadow: 0 0 5px var(--good);
+      }
+
+      .footer-hint {
+        padding: 0 28px 20px;
+        font-family: var(--mono);
+        font-size: 0.68rem;
+        color: var(--muted-2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .footer-hint kbd {
+        border: 1px solid var(--muted-2);
+        border-radius: 5px;
+        padding: 1px 6px;
+        color: var(--muted);
+      }
+
+      /* Launchpad */
+      #launchpad {
+        display: none;
+        position: relative;
+        z-index: 1;
+        width: min(100%, 420px);
+        animation: shellIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+      .lp-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+      .lp-eyebrow {
+        font-family: var(--mono);
+        font-size: 0.66rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .lp-title {
+        font-size: 1.55rem;
+        font-weight: 800;
+        color: var(--text);
+      }
+      .lp-close {
+        width: 36px;
+        height: 36px;
+        border: 1px solid var(--panel-border);
+        border-radius: 11px;
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--muted);
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        display: none;
+      }
+      .lp-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .lp-tile {
+        position: relative;
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: 18px;
+        padding: 24px;
+        cursor: pointer;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition:
+          transform 0.18s,
+          background 0.2s;
+        backdrop-filter: blur(20px);
+      }
+      .lp-tile:hover {
+        transform: translateY(-3px);
+        background: rgba(15, 22, 35, 0.95);
+        border-color: rgba(61, 142, 240, 0.3);
+      }
+      .lp-tile-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+      }
+      .lp-tile-icon svg {
+        width: 24px;
+        height: 24px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.6;
+      }
+      .lp-tile-name {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .lp-tile-desc {
+        font-family: var(--mono);
+        font-size: 0.7rem;
+        color: var(--muted);
+      }
+
+      /* Dead Screen */
+      #deadScreen {
+        display: none;
+        position: relative;
+        z-index: 1;
+        width: min(100%, 360px);
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: var(--radius);
+        padding: 36px 32px 32px;
+        text-align: center;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+        animation: shellIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+      .dead-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+        display: grid;
+        place-items: center;
+        margin: 0 auto 20px;
+        transition: background 0.3s;
+      }
+      .dead-icon svg {
+        width: 24px;
+        height: 24px;
+        fill: none;
+        stroke-width: 2;
+      }
+      .dead-title {
+        font-size: 1.2rem;
+        font-weight: 800;
+        margin-bottom: 8px;
+      }
+      .dead-sub {
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        color: var(--muted);
+        line-height: 1.65;
+        margin-bottom: 24px;
+      }
+      .dead-reason {
+        font-family: var(--mono);
+        font-size: 0.66rem;
+        color: var(--muted-2);
+        background: rgba(255, 255, 255, 0.025);
+        border: 1px solid var(--panel-border);
+        border-radius: 10px;
+        padding: 10px 14px;
+        margin-bottom: 20px;
+        line-height: 1.5;
+        display: none;
+      }
+      .dead-reason.visible {
+        display: block;
+      }
+      .dead-close-hint {
+        font-family: var(--mono);
+        font-size: 0.68rem;
+        color: var(--muted-2);
+      }
+      .dead-close-hint kbd {
+        border: 1px solid var(--muted-2);
+        border-radius: 5px;
+        padding: 1px 7px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <!-- GATE -->
+    <main class="shell" id="gateShell">
+      <button class="close-btn" id="closeBtn">
+        <svg viewBox="0 0 14 14">
+          <line x1="1" y1="1" x2="13" y2="13" />
+          <line x1="13" y1="1" x2="1" y2="13" />
+        </svg>
+      </button>
+      <div class="header">
+        <div class="badge"><span class="badge-dot"></span> Secure Gate</div>
+        <h1 class="title">Access Gate</h1>
+        <p class="subtitle">Enter code to unlock.</p>
+      </div>
+      <div class="divider"></div>
+      <section id="loginView" class="body">
+        <div class="label">One-time code</div>
+        <div class="field">
+          <input
+            id="codeInput"
+            type="text"
+            inputmode="numeric"
+            placeholder="••••••••••"
+            maxlength="10"
+          />
+          <button class="unlock-btn" id="unlockBtn">Unlock</button>
+        </div>
+        <div id="statusMsg" class="status"></div>
+      </section>
+      <div class="footer-hint">
+        <span>Press <kbd>↵</kbd></span
+        ><span>7-day session</span>
+      </div>
+    </main>
+
+    <!-- LAUNCHPAD -->
+    <div id="launchpad">
+      <div class="lp-header">
+        <div class="lp-title-group">
+          <div class="lp-eyebrow">
+            <span class="badge-dot"></span> Session Active
+          </div>
+          <div class="lp-title">Launchpad</div>
+        </div>
+        <button class="lp-close" id="lpClose">
+          <svg width="70%" height="70%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+      </div>
+      <div class="lp-grid" id="lpGrid"></div>
+    </div>
+
+    <!-- DEAD SCREEN -->
+    <div id="deadScreen">
+      <div class="dead-icon" id="deadIconBox">
+        <svg id="deadSvg" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+      </div>
+      <div class="dead-title" id="deadTitle">Session Ended</div>
+      <p class="dead-sub">
+        This tab is now dormant.<br />You can safely close it.
+      </p>
+      <div class="dead-reason" id="deadReason"></div>
+      <div class="dead-close-hint">Close with <kbd>Ctrl W</kbd></div>
+    </div>
+
+    <script>
+      const SITES = [
+        {
+          name: "Animex",
+          desc: "Streaming server",
+          url: "https://animex-extension-server.onrender.com",
+          color: "#3d8ef0",
+          icon: `<svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="59" y="53" width="282" height="37" fill="#DE541E"/>
+            <rect x="59" y="115" width="282" height="37" fill="#DE541E"/>
+            <path d="M327 348H280.904L234 79H280.904L327 348Z" fill="#DE541E"/>
+            <path d="M78 348H124.096L171 79H124.096L78 348Z" fill="#DE541E"/>
+            <rect x="171" y="288.857" width="59" height="59.1429" fill="#DE541E"/>
+            <ellipse cx="200.5" cy="288.31" rx="29.5" ry="32.3095" fill="#DE541E"/>
+            </svg>
+        `,
+        },
+      ];
+
+      const AUTH_KEY = "authorized",
+        AUTH_TIME_KEY = "authorized_at",
+        AUTH_TTL_MS = 1000 * 60 * 60 * 24 * 7;
+
+      const gateShell = document.getElementById("gateShell"),
+        codeInput = document.getElementById("codeInput"),
+        unlockBtn = document.getElementById("unlockBtn"),
+        statusMsg = document.getElementById("statusMsg"),
+        closeBtn = document.getElementById("closeBtn");
+      const launchpad = document.getElementById("launchpad"),
+        lpGrid = document.getElementById("lpGrid"),
+        lpClose = document.getElementById("lpClose");
+      const deadScreen = document.getElementById("deadScreen"),
+        deadReason = document.getElementById("deadReason"),
+        deadTitle = document.getElementById("deadTitle"),
+        deadIconBox = document.getElementById("deadIconBox"),
+        deadSvg = document.getElementById("deadSvg");
+
+      function showDead(reason, isSuccess = false) {
+        // NOTE: We are NOT wiping localStorage as requested
+        gateShell.style.display = "none";
+        launchpad.style.display = "none";
+        if (reason) {
+          deadReason.textContent = reason;
+          deadReason.classList.add("visible");
+        }
+
+        if (isSuccess) {
+          deadTitle.textContent = "Launch Complete";
+          deadTitle.style.color = "var(--good)";
+          deadIconBox.style.background = "rgba(61, 207, 130, 0.1)";
+          deadSvg.style.stroke = "var(--good)";
+          deadSvg.innerHTML =
+            '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>';
+        } else {
+          deadTitle.style.color = "var(--danger)";
+          deadIconBox.style.background = "rgba(224, 82, 82, 0.1)";
+          deadSvg.style.stroke = "var(--danger)";
+        }
+        deadScreen.style.display = "block";
+      }
+
+      function openInBlank(url) {
+        const win = window.open("about:blank", "_blank");
+        if (!win) {
+          alert("Popup blocked!");
+          return false;
+        }
+        try {
+          win.document.open();
+          win.document.write(
+            `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>AnimeX</title><style>*{margin:0;padding:0}html,body{width:100%;height:100%;background:#050709;overflow:hidden}iframe{position:fixed;inset:0;width:100%;height:100%;border:none}</style></head><body><iframe src="${encodeURI(url)}" allowfullscreen></iframe></body></html>`,
+          );
+          win.document.close();
+          return true;
+        } catch {
+          win.location.href = url;
+          return true;
+        }
+      }
+
+      function buildGrid() {
+        lpGrid.innerHTML = "";
+        SITES.forEach((site) => {
+          const tile = document.createElement("div");
+          tile.className = "lp-tile";
+          tile.innerHTML = `<div class="lp-tile-icon" style="background:${site.color}18;color:${site.color}">${site.icon}</div>
+          <div><div class="lp-tile-name">${site.name}</div><div class="lp-tile-desc">${site.desc}</div></div>`;
+          tile.addEventListener("click", () => {
+            if (openInBlank(site.url)) {
+              setTimeout(
+                () => showDead(`${site.name} launched in a new tab.`, true),
+                300,
+              );
+            }
+          });
+          lpGrid.appendChild(tile);
+        });
+      }
+
+      function showLaunchpad() {
+        gateShell.style.display = "none";
+        buildGrid();
+        launchpad.style.display = "block";
+        document.querySelector(".blob-1").style.background =
+          "radial-gradient(circle, rgba(20, 100, 60, 0.18), transparent 70%)";
+      }
+
+      async function submitCode() {
+        const code = codeInput.value.trim();
+        if (!code) return;
+        unlockBtn.disabled = true;
+        statusMsg.textContent = "Verifying…";
+        statusMsg.className = "status";
+        try {
+          const res = await fetch("/auth/validate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code }),
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            localStorage.setItem(AUTH_KEY, "true");
+            localStorage.setItem(AUTH_TIME_KEY, String(Date.now()));
+            showLaunchpad();
+          } else {
+            throw new Error();
+          }
+        } catch {
+          statusMsg.textContent = "Invalid code.";
+          statusMsg.className = "status error";
+          codeInput.value = "";
+        } finally {
+          unlockBtn.disabled = false;
+        }
+      }
+
+      function hasValidAuth() {
+        const auth = localStorage.getItem(AUTH_KEY) === "true";
+        const ts = Number(localStorage.getItem(AUTH_TIME_KEY) || "0");
+        return auth && Date.now() - ts < AUTH_TTL_MS;
+      }
+
+      closeBtn.addEventListener("click", () => {
+        document.body.innerHTML = "";
+        window.close();
+      });
+      lpClose.addEventListener("click", () => showDead("Session exited."));
+      unlockBtn.addEventListener("click", submitCode);
+      codeInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") submitCode();
+      });
+
+      if (hasValidAuth()) showLaunchpad();
+      setInterval(() => {
+        if (!hasValidAuth() && launchpad.style.display === "block")
+          showDead("Session expired.");
+      }, 30000);
+    </script>
+  </body>
+</html>
