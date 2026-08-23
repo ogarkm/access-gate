@@ -662,19 +662,22 @@
         deadScreen.style.display = "block";
       }
 
-      function openInBlank(url) {
-        // Open the destination directly in a new tab/window.
-        // Keeping the popup call directly inside the click handler prevents
-        // the browser from treating it as an unsolicited popup.
-        const win = window.open("about:blank", "_blank");
+      function openInBlank(url, name = "AccessGatewaySite") {
+        // Mirror the launcher pattern: open the actual destination directly
+        // in a dedicated popup window. This avoids blank iframe documents
+        // and lets the destination render normally.
+        const win = window.open(
+          url,
+          name,
+          "popup=1,width=1280,height=720,menubar=no,toolbar=no,location=no,status=no"
+        );
 
         if (!win) {
           alert("Popup blocked — allow popups for this site.");
           return false;
         }
 
-        // Navigate the newly-created window to the actual site.
-        win.location.replace(url);
+        try { win.focus(); } catch (_) {}
         return true;
       }
 
@@ -686,7 +689,7 @@
           tile.innerHTML = `<div class="lp-tile-icon" style="background:${site.color}18;color:${site.color}">${site.icon}</div>
           <div><div class="lp-tile-name">${site.name}${site.deprecated ? '<span class="lp-tile-deprecated">Deprecated</span>' : ""}</div><div class="lp-tile-desc">${site.desc}</div></div>`;
           tile.addEventListener("click", () => {
-            if (openInBlank(site.url)) {
+            if (openInBlank(site.url, `AccessGateway_${site.name.replace(/[^a-zA-Z0-9_-]/g, "_")}`)) {
               setTimeout(
                 () => showDead(`${site.name} launched in a new tab.`, true),
                 300,
