@@ -18,9 +18,9 @@
         --text: #d7e0eb;
         --muted: #465462;
         --muted-2: #293642;
-        --accent: #3d8ef0;
-        --accent-glow: rgba(61, 142, 240, 0.18);
-        --accent-dim: rgba(61, 142, 240, 0.08);
+        --accent: #9a8f7f;
+        --accent-glow: rgba(154, 143, 127, 0.18);
+        --accent-dim: rgba(154, 143, 127, 0.08);
         --danger: #e05252;
         --danger-glow: rgba(224, 82, 82, 0.15);
         --good: #3dcf82;
@@ -72,7 +72,7 @@
         height: 500px;
         background: radial-gradient(
           circle,
-          rgba(30, 80, 160, 0.18),
+          rgba(120, 108, 92, 0.18),
           transparent 70%
         );
         top: -120px;
@@ -83,7 +83,7 @@
         height: 400px;
         background: radial-gradient(
           circle,
-          rgba(10, 40, 90, 0.12),
+          rgba(72, 62, 50, 0.12),
           transparent 70%
         );
         bottom: -100px;
@@ -108,7 +108,7 @@
         box-shadow:
           0 0 0 1px rgba(255, 255, 255, 0.03),
           0 30px 80px rgba(0, 0, 0, 0.7),
-          0 0 60px rgba(61, 142, 240, 0.04);
+          0 0 60px rgba(154, 143, 127, 0.04);
         overflow: hidden;
         animation: shellIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
       }
@@ -134,7 +134,7 @@
         background: linear-gradient(
           90deg,
           transparent,
-          rgba(61, 142, 240, 0.5),
+          rgba(154, 143, 127, 0.5),
           transparent
         );
       }
@@ -186,7 +186,7 @@
         text-transform: uppercase;
         color: var(--accent);
         background: var(--accent-dim);
-        border: 1px solid rgba(61, 142, 240, 0.18);
+        border: 1px solid rgba(154, 143, 127, 0.18);
         border-radius: 999px;
         padding: 4px 12px;
         margin-bottom: 18px;
@@ -260,7 +260,7 @@
         outline: none;
       }
       input:focus {
-        border-color: rgba(61, 142, 240, 0.5);
+        border-color: rgba(154, 143, 127, 0.5);
         background: rgba(5, 8, 14, 0.9);
       }
       .unlock-btn {
@@ -274,7 +274,7 @@
         font-size: 0.88rem;
         font-weight: 700;
         cursor: pointer;
-        box-shadow: 0 8px 24px rgba(61, 142, 240, 0.28);
+        box-shadow: 0 8px 24px rgba(154, 143, 127, 0.28);
       }
 
       .status {
@@ -394,7 +394,7 @@
       .lp-tile:hover {
         transform: translateY(-3px);
         background: rgba(15, 22, 35, 0.95);
-        border-color: rgba(61, 142, 240, 0.3);
+        border-color: rgba(154, 143, 127, 0.3);
       }
       .lp-tile-icon {
         width: 48px;
@@ -662,11 +662,13 @@
         deadScreen.style.display = "block";
       }
 
-      function openInBlank(url, name = "AccessGatewaySite") {
+      function openInBlank(url, name = "AccessGatewaySite", title = "App") {
         // Open a genuinely blank popup first, then paint the destination
         // into it via an iframe. The popup's own document is about:blank
         // (nothing was ever navigated to `url`), so the address bar
-        // stays on about:blank while the iframe renders the site.
+        // stays on about:blank while the iframe renders the site. We do
+        // set a real <title>, so the tab/taskbar label reads as the app
+        // name instead of the default "about:blank".
         const win = window.open(
           "about:blank",
           name,
@@ -678,9 +680,15 @@
           return false;
         }
 
+        const safeTitle = String(title)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+
         win.document.open();
         win.document.write(
           '<!doctype html><html><head><meta charset="utf-8">' +
+            "<title>" + safeTitle + "</title>" +
             "<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}" +
             "iframe{border:0;width:100%;height:100%;display:block}</style></head>" +
             '<body><iframe src="' +
@@ -702,7 +710,7 @@
           tile.innerHTML = `<div class="lp-tile-icon" style="background:${site.color}18;color:${site.color}">${site.icon}</div>
           <div><div class="lp-tile-name">${site.name}${site.deprecated ? '<span class="lp-tile-deprecated">Deprecated</span>' : ""}</div><div class="lp-tile-desc">${site.desc}</div></div>`;
           tile.addEventListener("click", () => {
-            if (openInBlank(site.url, `AccessGateway_${site.name.replace(/[^a-zA-Z0-9_-]/g, "_")}`)) {
+            if (openInBlank(site.url, `AccessGateway_${site.name.replace(/[^a-zA-Z0-9_-]/g, "_")}`, site.name)) {
               setTimeout(
                 () => showDead(`${site.name} launched in a new tab.`, true),
                 300,
